@@ -36,7 +36,6 @@ func main() {
 	defer window.Destroy()
 
 	for world.isRunning {
-		surface.FillRect(nil, 0x000000)
 		draw(surface, world)
 		window.UpdateSurface()
 		for input := range inputs() {
@@ -48,13 +47,15 @@ func main() {
 }
 
 func draw(s *sdl.Surface, w *World) {
+	// clear screen
+	s.FillRect(nil, 0x000000)
 	for _, ent := range w.allEntities() {
 		ent.draw(s, w)
 	}
 }
 
 func update(w *World, input Input) *World {
-	pos := &(*w).player.pos
+	pos := &w.player.pos
 	switch input {
 	case UP:
 		if int(pos.y) == (*w).height-100 {
@@ -65,7 +66,7 @@ func update(w *World, input Input) *World {
 	case LEFT:
 		pos.vx = -10
 	case QUIT:
-		(*w).isRunning = false
+		w.isRunning = false
 	}
 	pos.x += pos.vx
 	pos.y += pos.vy
@@ -90,12 +91,12 @@ func initialize(config Config) (*sdl.Window, *sdl.Surface, *World) {
 		panic(err)
 	}
 
-	initialWorld := World{
+	initialWorld := &World{
 		height:    config.height,
 		width:     config.width,
 		player:    Player{pos: Pos{3, 3, 0, 0}},
 		isRunning: true,
 	}
 
-	return window, surface, &initialWorld
+	return window, surface, initialWorld
 }
