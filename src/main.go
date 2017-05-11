@@ -1,28 +1,19 @@
 package main
 
 import "github.com/veandco/go-sdl2/sdl"
-import "math"
 
-type World struct {
-	height    int
-	width     int
-	player    Player
-	isRunning bool
-}
-
+// FRICTION is the player's friction.
 const FRICTION float64 = 0.9
+
+// GRAVITY is the gravity in the world.
 const GRAVITY float64 = 2.5
 
-func (w World) allEntities() []Entity {
-	return []Entity{
-		w.player,
-	}
-}
-
+// Entity is a game object.
 type Entity interface {
 	draw(s *sdl.Surface, w *World)
 }
 
+// Pos represents position and velocity
 type Pos struct {
 	x  float64
 	y  float64
@@ -36,45 +27,24 @@ func main() {
 	defer window.Destroy()
 
 	for world.isRunning {
-		draw(surface, world)
-		window.UpdateSurface()
-		for input := range inputs() {
-			world = update(world, input)
+		draw(window, surface, world)
+		world.inputs = inputs(world.inputs)
+		for input, isDown := range world.inputs {
+			world = handleInput(world, input, isDown)
 		}
+		world = update(world)
 		sdl.Delay(uint32(1000 / config.framerate))
 	}
 	sdl.Quit()
 }
 
-func draw(s *sdl.Surface, w *World) {
+func draw(win *sdl.Window, s *sdl.Surface, w *World) {
 	// clear screen
 	s.FillRect(nil, 0x000000)
 	for _, ent := range w.allEntities() {
 		ent.draw(s, w)
 	}
-}
-
-func update(w *World, input Input) *World {
-	pos := &w.player.pos
-	switch input {
-	case UP:
-		if int(pos.y) == (*w).height-100 {
-			pos.vy = -30
-		}
-	case RIGHT:
-		pos.vx = 10
-	case LEFT:
-		pos.vx = -10
-	case QUIT:
-		w.isRunning = false
-	}
-	pos.x += pos.vx
-	pos.y += pos.vy
-	pos.y = math.Min(float64((*w).height)-100, pos.y)
-	pos.vx *= FRICTION
-	pos.vy += GRAVITY
-
-	return w
+	win.UpdateSurface()
 }
 
 func initialize(config Config) (*sdl.Window, *sdl.Surface, *World) {
@@ -94,8 +64,16 @@ func initialize(config Config) (*sdl.Window, *sdl.Surface, *World) {
 	initialWorld := &World{
 		height:    config.height,
 		width:     config.width,
-		player:    Player{pos: Pos{3, 3, 0, 0}},
+		player:    Player{pos: Pos{3, 3, 0, 0}, canJump: true},
 		isRunning: true,
+		inputs: map[Input]bool{
+			QUIT:  false,
+			UP:    false,
+			DOWN:  false,
+			LEFT:  false,
+			RIGHT: false,
+			NONE:  false,
+		},
 	}
 
 	return window, surface, initialWorld

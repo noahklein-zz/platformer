@@ -3,7 +3,8 @@ package main
 import "github.com/veandco/go-sdl2/sdl"
 
 type Player struct {
-	pos Pos
+	pos     Pos
+	canJump bool
 }
 
 func (p Player) draw(s *sdl.Surface, w *World) {

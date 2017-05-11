@@ -14,28 +14,35 @@ const (
 	NONE
 )
 
-func inputs() map[Input]bool {
-	m := make(map[Input]bool)
-	for {
-		key, ok := sdl.PollEvent().(*sdl.KeyDownEvent)
-		if !ok {
-			m[NONE] = true
-			return m
-		}
-		switch key.Keysym.Scancode {
-		case sdl.SCANCODE_ESCAPE:
+func inputs(m map[Input]bool) map[Input]bool {
+	for e := sdl.PollEvent(); e != nil; e = sdl.PollEvent() {
+		switch t := e.(type) {
+		case *sdl.QuitEvent:
 			m[QUIT] = true
-			return m
-		case sdl.SCANCODE_W:
-			m[UP] = true
-		case sdl.SCANCODE_S:
-			m[DOWN] = true
-		case sdl.SCANCODE_A:
-			m[LEFT] = true
-		case sdl.SCANCODE_D:
-			m[RIGHT] = true
-		default:
-			m[NONE] = true
+		case *sdl.KeyDownEvent:
+			input := scancodeToInput(t.Keysym.Scancode)
+			m[input] = true
+		case *sdl.KeyUpEvent:
+			input := scancodeToInput(t.Keysym.Scancode)
+			m[input] = false
 		}
+	}
+	return m
+}
+
+func scancodeToInput(scancode sdl.Scancode) Input {
+	switch scancode {
+	case sdl.SCANCODE_ESCAPE:
+		return QUIT
+	case sdl.SCANCODE_W:
+		return UP
+	case sdl.SCANCODE_S:
+		return DOWN
+	case sdl.SCANCODE_A:
+		return LEFT
+	case sdl.SCANCODE_D:
+		return RIGHT
+	default:
+		return NONE
 	}
 }
